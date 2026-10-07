@@ -1,0 +1,378 @@
+<title>Claude Team vs Enterprise</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: controls on the left, a sticky results panel on the right; stacks to one column on phones */
+:root{
+  --bg:#f3f5f7; --panel:#ffffff; --ink:#16202b; --muted:#5a6676; --line:#dde2e9; --chip:#edf0f4;
+  --team:#0d7a6b; --team-soft:#d9f0ec; --ent:#b05e0a; --ent-soft:#f8e8d6; --warn:#a4400b;
+  --sans:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f141a; --panel:#161d25; --ink:#e6ebf1; --muted:#94a1b1; --line:#27313c; --chip:#1e2731;
+  --team:#3cc2ad; --team-soft:#143a35; --ent:#f0a55a; --ent-soft:#3d2a16; --warn:#f29a62; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f141a; --panel:#161d25; --ink:#e6ebf1; --muted:#94a1b1; --line:#27313c; --chip:#1e2731;
+  --team:#3cc2ad; --team-soft:#143a35; --ent:#f0a55a; --ent-soft:#3d2a16; --warn:#f29a62; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--sans)}
+.wrap{max-width:1120px;margin:0 auto;padding-inline:16px;padding-block:28px 48px}
+header h1{font-size:clamp(24px,4vw,32px);line-height:1.15;margin:0 0 6px;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
+header p{margin:0;color:var(--muted);max-width:68ch}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;margin-top:22px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+.controls{display:grid;gap:14px}
+.group h2{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 12px;font-weight:600}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.field{display:grid;gap:5px;flex:1 1 140px;min-width:0}
+label,.lbl{font-size:13px;font-weight:600}
+.hint{font-size:12.5px;color:var(--muted)}
+input[type=number]{font:500 16px var(--mono);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+input:focus-visible,button:focus-visible,.seg input:focus-visible+span,summary:focus-visible{outline:2px solid var(--team);outline-offset:2px}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg label{position:relative;cursor:pointer}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg span{display:inline-block;padding:6px 11px;border-radius:999px;background:var(--chip);border:1px solid var(--line);font-size:13px;font-weight:500;white-space:nowrap}
+.seg input:checked+span{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.slider{display:grid;gap:6px}
+.slider-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.big{font:600 18px var(--mono);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--ink)}
+.presets{display:flex;flex-wrap:wrap;gap:6px}
+.presets button{font:500 12.5px var(--sans);color:var(--ink);background:transparent;border:1px dashed var(--line);border-radius:999px;padding:4px 10px;cursor:pointer}
+.presets button:hover{border-style:solid}
+.percost{font-size:13px;color:var(--muted)}
+.percost b{font-family:var(--mono);color:var(--ink);font-weight:600}
+details{border-top:1px solid var(--line);padding-top:12px}
+summary{cursor:pointer;font-weight:600;font-size:14px}
+.mix{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}
+@media (max-width:480px){.mix{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.mix input{font-size:14px;padding:6px 8px}
+.results{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:grid;gap:16px}
+.verdict{font-size:20px;font-weight:700;line-height:1.25;text-wrap:balance}
+.verdict .t{color:var(--team)} .verdict .e{color:var(--ent)}
+.plans{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.plan{border-radius:10px;padding:14px;display:grid;gap:4px}
+.plan.team{background:var(--team-soft)} .plan.ent{background:var(--ent-soft)}
+.plan .name{font-size:12px;text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+.plan.team .name{color:var(--team)} .plan.ent .name{color:var(--ent)}
+.plan .amt{font:600 clamp(22px,3.4vw,30px)/1.1 var(--mono);font-variant-numeric:tabular-nums}
+.plan .per{font-size:12.5px;color:var(--muted)}
+.plan .yr{font:500 14px var(--mono);font-variant-numeric:tabular-nums}
+.bars{display:grid;gap:8px}
+.bar{display:grid;grid-template-columns:86px minmax(0,1fr);gap:10px;align-items:center;font-size:13px}
+.track{height:14px;background:var(--chip);border-radius:4px;overflow:hidden}
+.fill{height:100%;border-radius:4px;transition:width .25s ease}
+.fill.team{background:var(--team)} .fill.ent{background:var(--ent)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{text-align:left;padding:7px 0;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+td.n,th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap;padding-left:10px}
+.tablewrap{overflow-x:auto}
+.breakeven{font-size:14px;border-left:3px solid var(--ink);padding:2px 0 2px 12px}
+.breakeven b{font-family:var(--mono)}
+.flags{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.flags li{font-size:13px;color:var(--warn);padding-left:16px;position:relative}
+.flags li::before{content:"!";position:absolute;left:0;font-weight:700}
+.notes{font-size:12.5px;color:var(--muted);display:grid;gap:6px}
+.notes p{margin:0;max-width:72ch}
+.notes a{color:inherit}
+@media (prefers-reduced-motion:reduce){.fill{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Claude Team vs Enterprise</h1>
+    <p>Set your headcount, how hard people use Claude, and which model they run. Team bundles usage into the seat price with weekly caps. Enterprise charges a seat fee plus every token at API rates.</p>
+  </header>
+
+  <div class="grid">
+    <section class="panel controls" aria-label="Inputs">
+      <div class="group">
+        <h2>Your organisation</h2>
+        <div class="row">
+          <div class="field">
+            <label for="users">Total users</label>
+            <input id="users" type="number" min="2" max="1000" value="20">
+          </div>
+          <div class="field">
+            <label for="heavy">Heavy users</label>
+            <input id="heavy" type="number" min="0" max="1000" value="6">
+            <span class="hint">Daily Claude Code / agent use. Premium seat on Team.</span>
+          </div>
+        </div>
+        <div class="field" style="margin-top:12px">
+          <span class="lbl">Team billing</span>
+          <div class="seg" role="radiogroup" aria-label="Team billing">
+            <label><input type="radio" name="billing" id="bill-annual" value="annual" checked><span>Annual</span></label>
+            <label><input type="radio" name="billing" id="bill-monthly" value="monthly"><span>Monthly</span></label>
+          </div>
+          <span class="hint">Enterprise is billed annually only.</span>
+        </div>
+      </div>
+
+      <div class="group">
+        <h2>Heavy users</h2>
+        <div class="field">
+          <span class="lbl">Model they mostly run</span>
+          <div class="seg" id="heavyModel" role="radiogroup" aria-label="Heavy user model"></div>
+        </div>
+        <div class="slider" style="margin-top:12px">
+          <div class="slider-top">
+            <label for="heavyTok">Tokens per user per month</label>
+            <span class="big" id="heavyTokOut"></span>
+          </div>
+          <input id="heavyTok" type="range" min="0" max="1000" step="1">
+          <div class="presets" id="heavyPresets"></div>
+          <div class="percost" id="heavyPer"></div>
+        </div>
+      </div>
+
+      <div class="group">
+        <h2>Everyone else</h2>
+        <div class="field">
+          <span class="lbl">Model they mostly run</span>
+          <div class="seg" id="lightModel" role="radiogroup" aria-label="Light user model"></div>
+        </div>
+        <div class="slider" style="margin-top:12px">
+          <div class="slider-top">
+            <label for="lightTok">Tokens per user per month</label>
+            <span class="big" id="lightTokOut"></span>
+          </div>
+          <input id="lightTok" type="range" min="0" max="1000" step="1">
+          <div class="presets" id="lightPresets"></div>
+          <div class="percost" id="lightPer"></div>
+        </div>
+      </div>
+
+      <details>
+        <summary>Assumptions</summary>
+        <p class="hint" style="margin:8px 0 0">How a month's tokens split. In Claude Code most tokens are the conversation re-read from cache on every turn, which is cheap. Output is the expensive part.</p>
+        <div class="mix">
+          <div class="field"><label for="mixRead">Cache read %</label><input id="mixRead" type="number" min="0" max="100" step="0.5" value="93"></div>
+          <div class="field"><label for="mixWrite">Cache write %</label><input id="mixWrite" type="number" min="0" max="100" step="0.5" value="5"></div>
+          <div class="field"><label for="mixFresh">Fresh input %</label><input id="mixFresh" type="number" min="0" max="100" step="0.5" value="1"></div>
+          <div class="field"><label for="mixOut">Output %</label><input id="mixOut" type="number" min="0" max="100" step="0.5" value="1"></div>
+        </div>
+        <p class="hint" id="mixSum" style="margin:6px 0 0"></p>
+        <div class="field" style="margin-top:12px;max-width:220px">
+          <label for="fx">Exchange rate (£ per $1)</label>
+          <input id="fx" type="number" min="0.1" max="5" step="0.01" value="0.75">
+          <span class="hint">About $1.33 to the pound, October 2026.</span>
+        </div>
+        <div class="field" style="margin-top:12px">
+          <span class="lbl">Cache lifetime</span>
+          <div class="seg" role="radiogroup" aria-label="Cache lifetime">
+            <label><input type="radio" name="ttl" id="ttl-5m" value="1.25" checked><span>5 min (writes 1.25× input)</span></label>
+            <label><input type="radio" name="ttl" id="ttl-1h" value="2"><span>1 hour (writes 2× input)</span></label>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <section class="results" aria-label="Results" aria-live="polite">
+      <div class="panel" style="display:grid;gap:16px">
+        <div class="verdict" id="verdict"></div>
+        <div class="plans">
+          <div class="plan team">
+            <span class="name">Team</span>
+            <span class="amt" id="teamAmt"></span>
+            <span class="per">per month</span>
+            <span class="yr" id="teamYr"></span>
+          </div>
+          <div class="plan ent">
+            <span class="name">Enterprise</span>
+            <span class="amt" id="entAmt"></span>
+            <span class="per">per month</span>
+            <span class="yr" id="entYr"></span>
+          </div>
+        </div>
+        <div class="bars" aria-hidden="true">
+          <div class="bar"><span>Team</span><div class="track"><div class="fill team" id="teamBar"></div></div></div>
+          <div class="bar"><span>Enterprise</span><div class="track"><div class="fill ent" id="entBar"></div></div></div>
+        </div>
+        <div class="breakeven" id="breakeven"></div>
+        <ul class="flags" id="flags"></ul>
+      </div>
+
+      <div class="panel">
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Line</th><th class="n">Team</th><th class="n">Enterprise</th></tr></thead>
+            <tbody id="breakdown"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="notes">
+        <p>Team keeps a flat bill because heavy users stop when they hit the weekly Premium cap. If your heavy users hit it often, the real cost of Team is the stalled work, which this page can't price.</p>
+        <p>Enterprise has user and org spend limits. Setting them, and defaulting to a cheaper model, is how you keep the usage line under control.</p>
+        <p>Public USD list prices as of October 2026 from <a href="https://claude.com/pricing">claude.com/pricing</a> and the Claude API price list, converted to pounds at the rate under Assumptions. Excludes VAT. Negotiated Enterprise contracts may differ. Team seats: Standard $20 / $25, Premium $100 / $125 (annual / monthly). Enterprise: $20 per seat per month, 20-seat self-serve minimum. Team allows 2 to 150 seats.</p>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function(){
+  // $ per million tokens
+  const MODELS = {
+    fable:  {name:"Fable 5.1",  input:10, output:50, read:0.25},
+    opus:   {name:"Opus 5.5",   input:4,  output:20, read:0.20},
+    sonnet: {name:"Sonnet 5.5", input:2,  output:10, read:0.20},
+    haiku:  {name:"Haiku 4.5",  input:1,  output:5,  read:0.10}
+  };
+  const TEAM = {annual:{std:20, prem:100}, monthly:{std:25, prem:125}, min:2, max:150};
+  const ENT = {seat:20, min:20};
+
+  const HEAVY = {min:10e6, max:5e9, def:1e9,
+    presets:[["Moderate · 300M",300e6],["Heavy · 1B",1e9],["Very heavy · 2.1B",2.1e9]]};
+  const LIGHT = {min:0.1e6, max:200e6, def:5e6,
+    presets:[["Occasional · 1M",1e6],["Daily chat · 5M",5e6],["Some Claude Code · 40M",40e6]]};
+
+  const $ = id => document.getElementById(id);
+
+  function buildModelSeg(el, name, def){
+    el.innerHTML = Object.entries(MODELS).map(([k,m]) =>
+      `<label><input type="radio" name="${name}" id="${name}-${k}" value="${k}"${k===def?" checked":""}><span>${m.name}</span></label>`
+    ).join("");
+  }
+  buildModelSeg($("heavyModel"), "heavyModel", "fable");
+  buildModelSeg($("lightModel"), "lightModel", "opus");
+
+  const toTok = (v, r) => r.min * Math.pow(r.max / r.min, v / 1000);
+  const toPos = (t, r) => Math.round(1000 * Math.log(t / r.min) / Math.log(r.max / r.min));
+
+  function presetButtons(el, slider, range){
+    el.innerHTML = range.presets.map(([l,t]) => `<button type="button" data-t="${t}">${l}</button>`).join("");
+    el.addEventListener("click", e => {
+      const b = e.target.closest("button"); if(!b) return;
+      slider.value = toPos(+b.dataset.t, range); update();
+    });
+  }
+  $("heavyTok").value = toPos(HEAVY.def, HEAVY);
+  $("lightTok").value = toPos(LIGHT.def, LIGHT);
+  presetButtons($("heavyPresets"), $("heavyTok"), HEAVY);
+  presetButtons($("lightPresets"), $("lightTok"), LIGHT);
+
+  function fmtTok(t){
+    t = Number(t.toPrecision(2));
+    if(t >= 1e9) return (t/1e9).toFixed(t >= 10e9 ? 0 : 1).replace(/\.0$/,"") + "B";
+    if(t >= 1e6) return (t/1e6).toFixed(t >= 10e6 ? 0 : 1).replace(/\.0$/,"") + "M";
+    return Math.round(t/1e3) + "K";
+  }
+  // Anthropic lists prices in USD; everything is converted to GBP at the rate in Assumptions
+  function money(usd){
+    if(!isFinite(usd)) return "—";
+    const x = usd * gbpPerUsd();
+    if(Math.abs(x) >= 100) return "£" + Math.round(x).toLocaleString("en-GB");
+    return "£" + x.toFixed(2);
+  }
+  const gbpPerUsd = () => num("fx", 0.1, 5) || 0.75;
+  const radio = name => document.querySelector(`input[name="${name}"]:checked`).value;
+  const num = (id, lo, hi) => { let v = parseFloat($(id).value); if(!isFinite(v)) v = 0; return Math.min(hi, Math.max(lo, v)); };
+
+  function mix(){
+    const r = num("mixRead",0,100), w = num("mixWrite",0,100), f = num("mixFresh",0,100), o = num("mixOut",0,100);
+    const s = r + w + f + o;
+    $("mixSum").textContent = Math.abs(s - 100) < 0.01 ? "Adds up to 100%." : `Adds up to ${s}%. Scaled to 100% for the maths.`;
+    return s > 0 ? {r:r/s, w:w/s, f:f/s, o:o/s} : {r:0, w:0, f:0, o:0};
+  }
+  function costPerM(m, mx, wMult){
+    return mx.r*m.read + mx.w*m.input*wMult + mx.f*m.input + mx.o*m.output;
+  }
+
+  function update(){
+    const users = Math.round(num("users", 2, 1000));
+    const heavy = Math.min(users, Math.round(num("heavy", 0, 1000)));
+    const light = users - heavy;
+    const billing = radio("billing");
+    const wMult = parseFloat(radio("ttl"));
+    const mx = mix();
+    const hM = MODELS[radio("heavyModel")], lM = MODELS[radio("lightModel")];
+    const hTok = toTok(+$("heavyTok").value, HEAVY), lTok = toTok(+$("lightTok").value, LIGHT);
+    $("heavyTokOut").textContent = fmtTok(hTok);
+    $("lightTokOut").textContent = fmtTok(lTok);
+
+    const hPerM = costPerM(hM, mx, wMult), lPerM = costPerM(lM, mx, wMult);
+    const hUser = hTok/1e6 * hPerM, lUser = lTok/1e6 * lPerM;
+    $("heavyPer").innerHTML = `Each heavy user ≈ <b>${money(hUser)}</b>/month at ${hM.name} API rates`;
+    $("lightPer").innerHTML = `Each other user ≈ <b>${money(lUser)}</b>/month at ${lM.name} API rates`;
+
+    // Team
+    const tp = TEAM[billing];
+    const teamStd = light * tp.std, teamPrem = heavy * tp.prem, team = teamStd + teamPrem;
+    const teamOK = users <= TEAM.max;
+    // Enterprise
+    const entSeatsBilled = Math.max(users, ENT.min);
+    const entSeats = entSeatsBilled * ENT.seat;
+    const entLight = light * lUser, entHeavy = heavy * hUser;
+    const ent = entSeats + entLight + entHeavy;
+
+    $("teamAmt").textContent = teamOK ? money(team) : "n/a";
+    $("teamYr").textContent = teamOK ? money(team*12) + " / year" : "Max 150 users";
+    $("entAmt").textContent = money(ent);
+    $("entYr").textContent = money(ent*12) + " / year";
+
+    const max = Math.max(teamOK ? team : 0, ent, 1);
+    $("teamBar").style.width = (teamOK ? team/max*100 : 0) + "%";
+    $("entBar").style.width = (ent/max*100) + "%";
+
+    // Verdict
+    let v;
+    if(!teamOK) v = `Team stops at 150 users, so <span class="e">Enterprise</span> is the only option at ${users}.`;
+    else if(Math.abs(ent - team) < Math.max(25, team*0.05)) v = `The two plans cost about the same.`;
+    else if(team < ent){
+      const x = ent/team;
+      v = `<span class="t">Team</span> is ${x >= 2 ? (x >= 10 ? Math.round(x) : x.toFixed(1)) + "× cheaper" : money(ent-team) + "/month cheaper"}.`;
+    } else {
+      const x = team/ent;
+      v = `<span class="e">Enterprise</span> is ${x >= 2 ? x.toFixed(1) + "× cheaper" : money(team-ent) + "/month cheaper"}.`;
+    }
+    $("verdict").innerHTML = v;
+
+    // Break-even: heavy-user API spend at which the plans cost the same
+    if(teamOK && heavy > 0){
+      const be = (team - entSeats - entLight) / heavy;
+      if(be <= 0){
+        $("breakeven").innerHTML = `Enterprise costs more here even if heavy users spent nothing on usage. Seat fees and light-user usage already exceed the Team bill.`;
+      } else {
+        const beTok = be / hPerM * 1e6;
+        $("breakeven").innerHTML = `Enterprise only wins while each heavy user stays under <b>${money(be)}</b>/month of usage, about <b>${fmtTok(beTok)}</b> tokens on ${hM.name}. Right now they're at <b>${money(hUser)}</b>.`;
+      }
+    } else if(teamOK){
+      const be = (team - entSeats) / Math.max(light,1);
+      $("breakeven").innerHTML = be > 0
+        ? `With no heavy users, Enterprise wins while each user stays under <b>${money(be)}</b>/month of usage. Right now they're at <b>${money(lUser)}</b>.`
+        : `Enterprise seat fees alone already exceed the Team bill.`;
+    } else {
+      $("breakeven").innerHTML = `Use spend limits and a cheaper default model to control the usage line.`;
+    }
+
+    // Flags
+    const flags = [];
+    if(users < ENT.min) flags.push(`Enterprise self-serve bills a minimum of ${ENT.min} seats, so you'd pay for ${ENT.min - users} empty ${ENT.min - users === 1 ? "seat" : "seats"}.`);
+    if(heavy > 0 && hTok >= 500e6) flags.push(`At ${fmtTok(hTok)} tokens a month, heavy users may hit Team's weekly Premium cap and have to wait.`);
+    if(+$("heavy").value > users) flags.push(`Heavy users can't exceed total users. Using ${users}.`);
+    $("flags").innerHTML = flags.map(f => `<li>${f}</li>`).join("");
+
+    // Breakdown
+    const rows = [
+      [`${light} standard ${light===1?"seat":"seats"}`, teamOK ? money(teamStd) : "—", "—"],
+      [`${heavy} premium ${heavy===1?"seat":"seats"}`, teamOK ? money(teamPrem) : "—", "—"],
+      [`${entSeatsBilled} Enterprise seats × ${money(ENT.seat)}`, "—", money(entSeats)],
+      [`Usage: ${light} others on ${lM.name}`, "Included", money(entLight)],
+      [`Usage: ${heavy} heavy on ${hM.name}`, "Included", money(entHeavy)],
+      [`<b>Total per month</b>`, `<b>${teamOK ? money(team) : "n/a"}</b>`, `<b>${money(ent)}</b>`]
+    ];
+    $("breakdown").innerHTML = rows.map(r => `<tr><td>${r[0]}</td><td class="n">${r[1]}</td><td class="n">${r[2]}</td></tr>`).join("");
+  }
+
+  document.addEventListener("input", update);
+  document.addEventListener("change", update);
+  update();
+})();
+</script>
