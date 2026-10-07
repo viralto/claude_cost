@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>Claude Team vs Enterprise</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -161,7 +162,7 @@ td.n,th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-
         <div class="field" style="margin-top:12px;max-width:220px">
           <label for="fx">Exchange rate (£ per $1)</label>
           <input id="fx" type="number" min="0.1" max="5" step="0.01" value="0.75">
-          <span class="hint">About $1.33 to the pound, October 2026.</span>
+          <span class="hint">Applies to Enterprise only. About $1.33 to the pound, October 2026.</span>
         </div>
         <div class="field" style="margin-top:12px">
           <span class="lbl">Cache lifetime</span>
@@ -210,7 +211,7 @@ td.n,th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-
       <div class="notes">
         <p>Team keeps a flat bill because heavy users stop when they hit the weekly Premium cap. If your heavy users hit it often, the real cost of Team is the stalled work, which this page can't price.</p>
         <p>Enterprise has user and org spend limits. Setting them, and defaulting to a cheaper model, is how you keep the usage line under control.</p>
-        <p>Public USD list prices as of October 2026 from <a href="https://claude.com/pricing">claude.com/pricing</a> and the Claude API price list, converted to pounds at the rate under Assumptions. Excludes VAT. Negotiated Enterprise contracts may differ. Team seats: Standard $20 / $25, Premium $100 / $125 (annual / monthly). Enterprise: $20 per seat per month, 20-seat self-serve minimum. Team allows 2 to 150 seats.</p>
+        <p>List prices as of October 2026 from <a href="https://claude.com/pricing">claude.com/pricing</a> and the Claude API price list. Team uses Anthropic's UK prices: Standard £18 / £22.50, Premium £90 / £113 per seat per month (annual / monthly). Enterprise is priced in dollars, US$20 per seat per month plus API usage, and is converted at the exchange rate under Assumptions. Enterprise self-serve has a 20-seat minimum. Team allows 2 to 150 seats. Negotiated Enterprise contracts may differ.</p>
       </div>
     </section>
   </div>
@@ -225,8 +226,9 @@ td.n,th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-
     sonnet: {name:"Sonnet 5.5", input:2,  output:10, read:0.20},
     haiku:  {name:"Haiku 4.5",  input:1,  output:5,  read:0.10}
   };
-  const TEAM = {annual:{std:20, prem:100}, monthly:{std:25, prem:125}, min:2, max:150};
-  const ENT = {seat:20, min:20};
+  // Team: Anthropic's published UK prices in GBP. Enterprise seat and API usage: USD, converted at the exchange rate
+  const TEAM = {annual:{std:18, prem:90}, monthly:{std:22.5, prem:113}, min:2, max:150};
+  const ENT = {seatUsd:20, min:20};
 
   const HEAVY = {min:10e6, max:5e9, def:1e9,
     presets:[["Moderate · 300M",300e6],["Heavy · 1B",1e9],["Very heavy · 2.1B",2.1e9]]};
@@ -264,10 +266,8 @@ td.n,th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-
     if(t >= 1e6) return (t/1e6).toFixed(t >= 10e6 ? 0 : 1).replace(/\.0$/,"") + "M";
     return Math.round(t/1e3) + "K";
   }
-  // Anthropic lists prices in USD; everything is converted to GBP at the rate in Assumptions
-  function money(usd){
-    if(!isFinite(usd)) return "—";
-    const x = usd * gbpPerUsd();
+  function money(x){
+    if(!isFinite(x)) return "—";
     if(Math.abs(x) >= 100) return "£" + Math.round(x).toLocaleString("en-GB");
     return "£" + x.toFixed(2);
   }
@@ -298,7 +298,8 @@ td.n,th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-
     $("lightTokOut").textContent = fmtTok(lTok);
 
     const hPerM = costPerM(hM, mx, wMult), lPerM = costPerM(lM, mx, wMult);
-    const hUser = hTok/1e6 * hPerM, lUser = lTok/1e6 * lPerM;
+    const fx = gbpPerUsd();
+    const hUser = hTok/1e6 * hPerM * fx, lUser = lTok/1e6 * lPerM * fx;
     $("heavyPer").innerHTML = `Each heavy user ≈ <b>${money(hUser)}</b>/month at ${hM.name} API rates`;
     $("lightPer").innerHTML = `Each other user ≈ <b>${money(lUser)}</b>/month at ${lM.name} API rates`;
 
@@ -308,7 +309,7 @@ td.n,th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-
     const teamOK = users <= TEAM.max;
     // Enterprise
     const entSeatsBilled = Math.max(users, ENT.min);
-    const entSeats = entSeatsBilled * ENT.seat;
+    const entSeats = entSeatsBilled * ENT.seatUsd * fx;
     const entLight = light * lUser, entHeavy = heavy * hUser;
     const ent = entSeats + entLight + entHeavy;
 
@@ -340,7 +341,7 @@ td.n,th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-
       if(be <= 0){
         $("breakeven").innerHTML = `Enterprise costs more here even if heavy users spent nothing on usage. Seat fees and light-user usage already exceed the Team bill.`;
       } else {
-        const beTok = be / hPerM * 1e6;
+        const beTok = be / (hPerM * fx) * 1e6;
         $("breakeven").innerHTML = `Enterprise only wins while each heavy user stays under <b>${money(be)}</b>/month of usage, about <b>${fmtTok(beTok)}</b> tokens on ${hM.name}. Right now they're at <b>${money(hUser)}</b>.`;
       }
     } else if(teamOK){
@@ -363,7 +364,7 @@ td.n,th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-
     const rows = [
       [`${light} standard ${light===1?"seat":"seats"}`, teamOK ? money(teamStd) : "—", "—"],
       [`${heavy} premium ${heavy===1?"seat":"seats"}`, teamOK ? money(teamPrem) : "—", "—"],
-      [`${entSeatsBilled} Enterprise seats × ${money(ENT.seat)}`, "—", money(entSeats)],
+      [`${entSeatsBilled} Enterprise seats × US$${ENT.seatUsd} (${money(ENT.seatUsd * fx)})`, "—", money(entSeats)],
       [`Usage: ${light} others on ${lM.name}`, "Included", money(entLight)],
       [`Usage: ${heavy} heavy on ${hM.name}`, "Included", money(entHeavy)],
       [`<b>Total per month</b>`, `<b>${teamOK ? money(team) : "n/a"}</b>`, `<b>${money(ent)}</b>`]
